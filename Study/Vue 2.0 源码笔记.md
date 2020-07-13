@@ -2,4 +2,4 @@
 
 # Dep
 
-即Depends, 被watch的目标
+即Depends, 被watch的目标. 采用的是[观察者模式]().
