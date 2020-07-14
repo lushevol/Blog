@@ -32,8 +32,7 @@ h 接收最多三个参数,
 
 patch 函数执行过程如下:
 
-1. pre hook
-2. 若oldVnode为是Element(即sel为空), 则根据它创建一个基本的vnode(有sel和elm).
+2. 若oldVnode为是Element(即sel为空), 则根据它创建一个基本的vnode(只保留了tag、id、class), prop和attribute等不需要.
 3. 如果新老vnode挂载的节点是同一个(`sameVnode: sel和key相等`), 则执行`patchVnode`方法.
 4. 否则, 直接拿新vnode替换oldVnode.(将新vnode`具像化`后挂载到oldVnode父节点下, 并删除oldVnode)
 
@@ -76,27 +75,89 @@ old: 从 oldStartIndex 0 到 oldEndIndex old.length-1
 
 new: 从 newStartIndex 0 到 newEndIndex new.length-1
 
-循环从start和end往中间移动, 遇到vnode为null时跳过.
+***循环***从start和end往中间移动, 遇到vnode为null时跳过.
 
-1. 如果new和old到start或end vnode是sameVnode
+1. 如果new和old的start或end vnode是sameVnode
 
    执行patchVnode, 并同时往中间移动.
 
 2. 如果old的start跟new的end是sameVnode
 
-   将old的start vnode插到old的end后面, 并同时往中间移动
+   执行patchNode, 将old的start vnode插到old的end后面(**?**), 并同时往中间移动
 
 3. 如果old的end跟new的start是sameVnode, 
 
-   将old的end vnode插到old的start前面, 并同时往中间移动
+   执行patchNode, 将old的end vnode插到old的start前面(**?**), 并同时往中间移动
 
-4. 否则
+4. 如果仍没遍历完, 说明有两种可能性: 1节点是新增的; 2节点处于old的start和end中间
 
-5. 结束后, 如果new还有没遍历完的,则直接全部插入到
+   创建一个old vnode的key=>index的map索引.
 
-   如果old还有没遍历完的, 则直接全部删除.
+   然后查看new start的vnode的key是否在索引中存在:
+
+   - 不存在, 说明是新增节点: 
+
+     插到old startVnode的前面
+
+   - 存在, 则找到位置发生变化的节点: 
+
+     如果new和old的sel不一样, 则插到old startVnode前面 (同上)
+
+     如果一样, 则patchVnode; 并将old vnode的elm插到old start前面, 并置空原来的old vnode (下次直接跳过)
+
+   然后, new start往中间缩进
+
+遍历结束后, 如果new还有没遍历完的,则直接全部插入到末尾
+
+如果old还有没遍历完的, 则直接全部删除.
 
 
+
+## modules
+
+[通用] 对应属性都没有或者相等, 直接返回, 不处理
+
+### attributes
+
+create和update阶段都会updateAttribute
+
+遍历新attrs, 将新的设置上. xml和xlink属性特殊处理; 把老attrs有但新的没有的属性都删掉.
+
+### class
+
+class结构是一个以string为key, boolean为value的Object.
+
+首先把oldClass有, newClass没有的, 在classList上直接删掉; 然后把newClass里跟oldClass的flag不一样的class, 在classList上相应的add/remove.
+
+### dataset
+
+dataset结构是一个key/value都是string的Object
+
+比较新老差异, 基本操作.
+
+值得注意的是, 如果elm.dataset存在, 则直接操作它, 否则操作elm的attr, 把它当作`data-`开头的属性 (转换规则: **Camel/Pascal** => **kebab-case**). 
+
+### eventListeners
+
+
+
+### props
+
+
+
+
+
+## 总结
+
+1. 使用VNode的意义
+
+   实际上diff算法中使用到了非常多的dom操作, 但速度依然很快, 因为在现代浏览器的优化下dom操作本来就快, 而且极短时间内的多个dom操作, 只会触发一次回流, 性能上不会消耗很大. 那为什么还要使用vnode呢? 首先是跨平台, 可以自定义renderer实现不同平台的底层操作, web上的DOM和移动平台的view; 然后就是diff算法减少了大量的重复和没必要的DOM更新, 把计算留在JS引擎中, 提升了效率.
+
+   > 如果只是简单的dom操作, 没必要使用vnode.
+
+2. patch函数是将新vnode跟老vnode的diff, 应用到老dom上
+
+3. 对data中prop、attribute、event等的处理
 
 ## 参考
 
