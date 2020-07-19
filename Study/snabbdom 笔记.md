@@ -143,7 +143,15 @@ dataset结构是一个key/value都是string的Object
 
 ### props
 
+仅遍历新props.
 
+1. 新老prop的值不相等, 且key不是“value”.
+
+2. 新老prop的值不相等, key为“value”, 但elm的“value”值不为新的prop值.
+
+则, 在elm上设置key的值为新的prop值.
+
+### style
 
 
 
