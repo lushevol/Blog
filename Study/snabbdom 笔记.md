@@ -139,7 +139,11 @@ dataset结构是一个key/value都是string的Object
 
 ### eventListeners
 
+把老的有新的没有的eventListeners都删掉.
 
+把新的有老的没有的, 都加上eventListener.
+
+> data.on支持, function, 或数组[func, args1, args2...]格式.
 
 ### props
 
@@ -153,7 +157,21 @@ dataset结构是一个key/value都是string的Object
 
 ### style
 
+- create和update阶段, 更新style
 
+  把新style没有的, 1.以"--"开头([CSS变量](https://developer.mozilla.org/en-US/docs/Web/CSS/Using_CSS_custom_properties))的删掉;2.其余的置空
+
+  新style里, 1.delayed 属性都通过requestAnimationFrame或settimeout下一轮渲染.
+
+  2.remove 属性略过
+
+  3.将新属性设置上去
+
+- pre 阶段, 强制`回流`, 将reflowForced设为false.
+
+- destroy 阶段, 如果data里没有设置style、或style里没有destory, 则跳过; 否则将data.style.destroy的属性都设置到elm的style里.
+
+- remove 阶段, 如果data没有设置style, 或style里没有remove, 则直接remove(); 否则, 等待所有`transition-property`都完成后, 再remove.
 
 ## 总结
 
